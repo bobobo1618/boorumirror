@@ -23,7 +23,7 @@ def page():
             )
 
     if keyword:
-        query = query.filter(r.row['keywords'].contains(keyword))
+        query = query.filter(r.row['keywords'].contains(*keyword.split(',')))
 
     return jsonify(
         page = list(

@@ -45,17 +45,23 @@
     var timeoffset = Math.ceil(Date.now() / 1000);
     var getting = false;
 
+    var filter = window.location.hash ? window.location.hash.slice(1, window.location.hash.length) : false;
+
     function getPage(){
+        var data = {
+            before: timeoffset,
+        };
+        if(filter){
+            data.keyword = filter;
+        };
         if(getting){
             return;
-        }
+        };
         getting = true;
         $
         .ajax('/awwni', {
             method: 'GET',
-            data: {
-                before: timeoffset,
-            }
+            data: data
         })
         .done(function(data){
             getting = false;
