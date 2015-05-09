@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Awwniview</title>
+    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
+    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/jquery.imagesloaded/3.1.8/imagesloaded.pkgd.min.js"></script>
+    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/masonry/3.3.0/masonry.pkgd.min.js"></script>
+    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/jquery.isotope/2.2.0/isotope.pkgd.min.js"></script>
+    <script type="text/javascript" src="http://rawgit.com/metafizzy/isotope-packery/master/packery-mode.pkgd.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.4/js/bootstrap.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.4/css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.4/css/bootstrap-theme.min.css">
+    <style type="text/css">
+    .item, .item > img {
+        height: 250px;
+    }
+    .item > img {
+        position: relative;
+    }
+    .item > a {
+        position: absolute;
+        top: 220px;
+        height: 30px;
+        left: 0;
+        width: 100%;
+        margin: 0;
+        color: rgb(255,255,255);
+        background-color: rgba(0, 0, 0, 0.4);
+    }
+    item > a:hover {
+        color: rgb(200, 200, 200);
+    }
+    </style>
+</head>
+<body>
+    <div class="stuff"></div>
+    <script type="text/javascript">
+    
+    var msnry = $('.stuff').isotope({
+        itemSelector: '.item',
+        layoutMode: 'packery',
+        isOriginTop: true,
+    });
+    
+    var timeoffset = Math.ceil(Date.now() / 1000);
+    var getting = false;
+
+    function getPage(){
+        if(getting){
+            return;
+        }
+        getting = true;
+        $
+        .ajax('/awwni', {
+            method: 'GET',
+            data: {
+                before: timeoffset,
+            }
+        })
+        .done(function(data){
+            getting = false;
+            for (var i = data.page.length - 1; i >= 0; i--) {
+                
+                var thing = data.page[i];
+                var newImage = $('<img>');
+                var container = $('<div>');
+
+                newImage.attr('src', thing.thumburl);
+                container.attr('class', 'item');
+
+                container.append(newImage);
+                var link = $('<a>')
+                link.attr('href', thing.fullurl)
+                link.text(thing.sourceName + ' - ' + thing.title)
+                container.append(link);
+
+                msnry
+                    .append(container)
+                    .isotope('appended', container)
+                container.imagesLoaded(function(){
+                    msnry.isotope('layout');
+                });
+            };
+            timeoffset = data.page[data.page.length-1].timestamp;
+        });  
+    }
+    getPage();
+    $(window).on('scroll', function(){
+        if( $(window).scrollTop() > $(document).height() - $(window).height() - 50) {
+            getPage();
+        }
+    }).scroll();
+    </script>
+</body>
+</html>
