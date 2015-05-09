@@ -25,6 +25,7 @@ def page():
                 'timestamp': row['dateCreated'].to_epoch_time(),
                 'thumburl': r.add(conf.thumbprefix, '/', row['basename'], '.500.webp'),
                 'fullurl': r.add(conf.fullprefix, '/', row['basename'], '.', row['type']),
+                'redditurl': r.add("https://reddit.com/r/", row['sourceName'], '/comments/', row['externalId']),
             }))
             .run(c))
     )
