@@ -14,20 +14,29 @@ def index():
 def page():
     before = r.epoch_time(int(request.args.get('before', time())))
     limit = int(request.args.get('limit', 40))
+    keyword = request.args.get('keyword', '')
+    
+    query = (db
+                .table('images')
+                .order_by(index=r.desc('dateCreated'))
+                .filter(r.row['dateCreated'] < before)
+            )
+
+    if keyword:
+        query = query.filter(r.row['keywords'].contains(keyword))
+
     return jsonify(
         page = list(
-            db
-            .table('images')
-            .order_by(index=r.desc('dateCreated'))
-            .filter(r.row['dateCreated'] < before)
-            .limit(limit)
-            .map(lambda row: row.merge({
-                'timestamp': row['dateCreated'].to_epoch_time(),
-                'thumburl': r.add(conf.thumbprefix, '/', row['basename'], '.500.webp'),
-                'fullurl': r.add(conf.fullprefix, '/', row['basename'], '.', row['type']),
-                'redditurl': r.add("https://reddit.com/r/", row['sourceName'], '/comments/', row['externalId']),
-            }))
-            .run(c))
+            query
+                .limit(limit)
+                .map(lambda row: row.merge({
+                    'timestamp': row['dateCreated'].to_epoch_time(),
+                    'thumburl': r.add(conf.thumbprefix, '/', row['basename'], '.500.webp'),
+                    'fullurl': r.add(conf.fullprefix, '/', row['basename'], '.', row['type']),
+                    'redditurl': r.add("https://reddit.com/r/", row['sourceName'], '/comments/', row['externalId']),
+                }))
+                .run(c)
+        )
     )
 
 db = r.db('redditbooru')
