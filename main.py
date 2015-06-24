@@ -1,46 +1,55 @@
 from flask import Flask, send_from_directory, request, jsonify
-import rethinkdb as r
-from datetime import datetime
+import orm
+from datetime import datetime, timedelta
 from time import time
 import conf
 app = Flask(__name__)
  
+session = orm.Session()
 
 @app.route('/')
 def index():
     return app.send_static_file('index.html')
 
-@app.route('/awwni')
+@app.route('/items')
 def page():
-    before = r.epoch_time(int(request.args.get('before', time())))
+    before = datetime.fromtimestamp(int(request.args.get('before', time())))
     limit = int(request.args.get('limit', 40))
-    keyword = request.args.get('keyword', '')
-    
-    query = (db
-                .table('images')
-                .order_by(index=r.desc('dateCreated'))
-                .filter(r.row['dateCreated'] < before)
-            )
+    keywords = request.args.get('keyword', '').split(',')
 
-    if keyword:
-        query = query.filter(r.row['keywords'].contains(*keyword.split(',')))
-
-    return jsonify(
-        page = list(
-            query
-                .limit(limit)
-                .map(lambda row: row.merge({
-                    'timestamp': row['dateCreated'].to_epoch_time(),
-                    'thumburl': r.add(conf.thumbprefix, '/', row['basename'], '.500.webp'),
-                    'fullurl': r.add(conf.fullprefix, '/', row['basename'], '.', row['type']),
-                    'redditurl': r.add("https://reddit.com/r/", row['sourceName'], '/comments/', row['externalId']),
-                }))
-                .run(c)
-        )
+    query = session.query(
+        orm.Image.id,
+        orm.Image.thumb_url,
+        orm.Image.title,
+        orm.Image.date,
+        orm.Image.source_name,
+        orm.Image.url,
+        orm.Image.atags,
     )
 
-db = r.db('redditbooru')
-c = r.connect()
+    if keywords[0]:
+        query = query.filter(orm.Image.atags.contains(keywords))
+
+    query = query.filter(
+        orm.Image.date < before,
+        orm.Image.fetched == 1,
+    ).order_by(
+        orm.Image.date.desc()
+    ).limit(limit)
+
+    return jsonify(
+        page = [
+            {
+                'id': result.id,
+                'thumb_url': result.thumb_url,
+                'title': result.title,
+                'date': int((result.date - datetime(1970, 1, 1, tzinfo=result.date.tzinfo)).total_seconds()),
+                'source_name': result.source_name,
+                'url': result.url,
+                'tags': result.atags,
+            } for result in query
+        ]
+    )
 
 if __name__ == '__main__':
     app.debug = True

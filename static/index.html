@@ -59,7 +59,7 @@
         };
         getting = true;
         $
-        .ajax('/awwni', {
+        .ajax('/items', {
             method: 'GET',
             data: data
         })
@@ -71,13 +71,13 @@
                 var newImage = $('<img>');
                 var container = $('<div>');
 
-                newImage.attr('src', thing.thumburl);
+                newImage.attr('src', thing.thumb_url);
                 container.attr('class', 'item');
 
                 container.append(newImage);
                 var link = $('<a>')
-                link.attr('href', thing.redditurl)
-                link.text(thing.sourceName + ' - ' + thing.title)
+                link.attr('href', thing.url)
+                link.text(thing.source_name + ' - ' + thing.title)
                 container.append(link);
 
                 msnry
@@ -87,7 +87,7 @@
                     msnry.isotope('layout');
                 });
             };
-            timeoffset = data.page[data.page.length-1].timestamp;
+            timeoffset = data.page[data.page.length-1].date;
         });  
     }
     getPage();
